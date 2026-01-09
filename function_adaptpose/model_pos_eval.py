@@ -43,6 +43,9 @@ def evaluate(data_loader, model_pos_eval, device, summary=None, writer=None, key
         num_poses = targets_3d.size(0)
         inputs_2d = inputs_2d.to(device)
 
+        if inputs_2d.shape[0] == 0:
+            continue
+
         with torch.no_grad():
             if flipaug:  # flip the 2D pose Left <-> Right
                 joints_left = [4, 5, 6, 10, 11, 12]

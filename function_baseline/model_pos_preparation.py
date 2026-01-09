@@ -41,7 +41,10 @@ def model_pos_preparation(args, dataset, device):
     if args.pretrain:
 
         tmp_ckpt = torch.load(args.pretrain_path)
-        model_pos.load_state_dict(tmp_ckpt['state_dict'])
+        if 'state_dict' in tmp_ckpt:
+            model_pos.load_state_dict(tmp_ckpt['state_dict'])
+        else:
+            model_pos.load_state_dict(tmp_ckpt['model_pos'])
         print('==> Pretrained posenet loaded')
     else:
         model_pos.apply(init_weights)

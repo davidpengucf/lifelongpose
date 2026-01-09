@@ -8,7 +8,7 @@ import torch.nn as nn
 # add model for generator and discriminator
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-from code.common.viz import plot_16j_2d
+from common.viz import plot_16j_2d
 
 from common.camera import project_to_2d
 from common.data_loader import PoseDataSet,PoseDataSet2
@@ -398,10 +398,11 @@ def train_gan(args, poseaug_dict, data_dict, model_pos, criterion, fake_3d_sampl
 
         # plot a image for visualization
         if i % 100 == 0:
+            pass
             # plot_poseaug(inputs_3d[:,0,pad], inputs_2d[:,0,pad], g_rlt, cam_param, summary.epoch, i, args)
-            plot_16j(inputs_3d[i:i+1,0,:].cpu().detach().numpy())
-            plot_16j(g_rlt['pose_rt'][i,:].cpu().detach().numpy())
-            plot_16j_2d(outputs_2d_rt[i].cpu().detach().numpy())
+            #plot_16j(inputs_3d[i:i+1,0,:].cpu().detach().numpy())
+            #plot_16j(g_rlt['pose_rt'][i,:].cpu().detach().numpy())
+            #plot_16j_2d(outputs_2d_rt[i].cpu().detach().numpy())
             # plot_16j(inputs_3d[100:101,0,pad].cpu().detach().numpy())
             # plot_16j(g_rlt['pose_rt'][100].cpu().detach().numpy())
 

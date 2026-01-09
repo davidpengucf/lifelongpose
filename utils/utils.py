@@ -86,6 +86,11 @@ def save_ckpt(state, ckpt_path, suffix=None):
 
     file_path = os.path.join(ckpt_path, 'ckpt_{}.pth.tar'.format(suffix))
     torch.save(state, file_path)
+    
+    chk_path = os.path.join(ckpt_path, 'ckpt_{}.bin'.format(suffix))
+    #print('Saving checkpoint to', chk_path)
+    
+    torch.save(state, chk_path)
 
 
 def wrap(func, unsqueeze, *args):

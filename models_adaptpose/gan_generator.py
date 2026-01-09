@@ -106,21 +106,30 @@ class BAGenerator(nn.Module):
         :return: nx16x3
         '''
         # convert 3d pose to root relative
+        #print("inputs_3d_0: ", inputs_3d.shape) #[1024, 1, 27, 16, 3]
         inputs_3d=inputs_3d[:,0]
+        #print("inputs_3d_1: ", inputs_3d.shape) #[1024, 27, 16, 3]
         root_origin = inputs_3d[:, :,:1, :] * 1.0
         x = inputs_3d - inputs_3d[:,:, :1, :]  # x: root relative
+        #print("x_0: ", x.shape) #[1024, 27, 16, 3]
 
         # extract length, unit bone vec
         bones_unit = get_bone_unit_vecbypose3d(x)
         bones_length = get_bone_lengthbypose3d(x)
         bones_vec=get_BoneVecbypose3d(x)
+        #print("bones_vec 0: ",bones_vec.shape) # [1024, 27, 15, 3]
         middle_frame=int((x.shape[1]-1)/2)
+        #print("middle_frame:", middle_frame) # 13
         bones_vec=bones_vec[:,middle_frame].contiguous()
+        #print("bones_vec 1: ",bones_vec.shape) # [1024, 15, 3]
             
         # pre-processing
         bones_vec = bones_vec.view(bones_vec.size(0), -1)
+        # print("bones_vec 2: ",bones_vec.shape) # [1024, 45]
         x_=x[:,middle_frame].contiguous()
+        #print("x_0: ", x_.shape) # [1024, 16, 3]
         x_ = x_.view(x_.size(0), -1)
+        #print("x_1: ", x_.shape) # [1024, 48]
         noise = torch.randn(x_.shape[0], self.noise_channle, device=x.device)
 
         y = self.w1(torch.cat((x_, noise), dim=-1)) #torch.cat((bones_vec, noise), dim=-1)
@@ -134,23 +143,33 @@ class BAGenerator(nn.Module):
             y = self.linear_stages[i](y)
 
         y = self.w2(y)
+        #print("y_0: ", y.shape) # [1024, 60]
         y = y.view(x.size(0), -1, 4)
+        #print("y_1: ", y.shape) # [1024, 15, 4]
 
-        y_axis=y[:,:,:3]
+        y_axis=y[:,:,:3] # [1024, 15, 3]
 
         y_axis = y_axis/torch.linalg.norm(y_axis,dim=-1,keepdim=True)
-        y_axis = y_axis.unsqueeze(1).repeat(1,bones_unit.shape[1],1,1)
+        y_axis = y_axis.unsqueeze(1).repeat(1,bones_unit.shape[1],1,1) # [1024, 27, 15, 3]
         y_theta =y[:,:,3:4]
-        y_theta=y_theta.unsqueeze(1).repeat(1,bones_unit.shape[1],1,1)
+        y_theta=y_theta.unsqueeze(1).repeat(1,bones_unit.shape[1],1,1) 
         y_theta=y_theta/x.shape[1]
         y_theta_t=torch.arange(x.shape[1]).unsqueeze(0).unsqueeze(2).unsqueeze(3).cuda()
         y_theta_t=y_theta_t.repeat(bones_unit.shape[0],1,bones_unit.shape[2],1)
+        #print("y_theta_t: ",y_theta_t.shape) # [1024, 27, 15, 1]
         y_theta=y_theta*y_theta_t
+        #print("y_theta: ",y_theta.shape) # [1024, 27, 15, 1]
 
         y_axis = y_axis*y_theta
+        #print("y_axis: ",y_axis.shape) # [1024, 27, 15, 1]
         y_rM = torch3d.axis_angle_to_matrix(y_axis.view(-1,3))[..., :3, :3]  # Nx4x4->Nx3x3 rotation matrix
+        #print("y_rM 0: ",y_rM.shape)
         y_rM=y_rM.view(bones_unit.shape[0],bones_unit.shape[1],bones_unit.shape[2],3,3)
+        #print("y_rM 1: ",y_rM.shape) # [1024, 27, 15, 3, 3]
         modifyed_unit=torch.matmul(y_rM,bones_unit.unsqueeze(-1))[...,0]
+        #print("bones_unit 0: ",bones_unit.shape) # [1024, 27, 15, 3]
+        #print("bones_unit 1: ",bones_unit.unsqueeze(-1).shape) # [1024, 27, 15, 3, 1]
+        #print("modifyed_unit: ", modifyed_unit.shape) # # [1024, 27, 15, 3, 1]
         # # modify the bone angle with length unchanged.
         # y=y.unsqueeze(1).repeat(1,bones_unit.shape[1],1,1)
         # y=y/x.shape[1]
@@ -170,11 +189,13 @@ class BAGenerator(nn.Module):
 
         cos_angle = torch.sum(modifyed_unit * bones_unit, dim=-1)
         ba_diff = 1 - cos_angle
+        #print("ba_diff: ", ba_diff.shape) # [1024, 27, 15]
 
         modifyed_bone = modifyed_unit * bones_length
 
         # convert bone vec back to 3D pose
         out = get_pose3dbyBoneVec(modifyed_bone) + root_origin
+        #print("out: ", out.shape) # [1024, 27, 16, 3]
 
         return out, ba_diff
 
@@ -247,13 +268,16 @@ class RTGenerator(nn.Module):
             r = self.linear_stages_R[i](r)
 
         # r = self.w2_R(r)
+        #print("r: ",r.shape) # [1024, 256]
         r_mean=r[:,:3]
         r_std=r[:,3:6]*r[:,3:6]
         r_axis = torch.normal(mean=r_mean,std=r_std)
         r_axis = r_axis/torch.linalg.norm(r_axis,dim=-1,keepdim=True)
         r_axis = r_axis*r[:,6:7]
+        #print("r_axis: ",r_axis.shape)
 
         rM=torch3d.axis_angle_to_matrix(r_axis) #axis_angle
+        #print("rM: ",rM.shape)
         # rM = torch3d.euler_angles_to_matrix(r_axis,["Z","Y","X"])  #euler_angle
         # rM= torch3d.quaternion_to_matrix(r_axis) #quaternion
         
@@ -270,15 +294,18 @@ class RTGenerator(nn.Module):
 
         t[:, 2] = t[:, 2].clone() * t[:, 2].clone()
         t = t.view(x.size(0), 1, 3)  # Nx1x3 translation t
+        #print("t 0: ",t.shape)
 
         # operat RT on original data - augx
         augx = augx - augx[:, :, :1, :]  # x: root relative
-        augx = augx.permute(0, 1, 3,2).contiguous()
+        augx = augx.permute(0, 1, 3,2).contiguous() # [1024, 27, 3, 16]
         rM=rM.unsqueeze(1).repeat(1,pad,1,1)
         augx_r = torch.matmul(rM, augx)
         augx_r = augx_r.permute(0,1,3, 2).contiguous()
         t=t.unsqueeze(1).repeat(1,pad,1,1)
+        #print("t 1: ",t.shape)
         augx_rt = augx_r + t
+        #print("augx_rt: ",augx_rt.shape) # [1024, 27, 16, 3]
 
         return augx_rt, (r, t)  # return r t for debug
 
@@ -342,7 +369,7 @@ class BLGenerator(nn.Module):
         for i in range(self.num_stage):
             blr = self.linear_stages_BL[i](blr)
 
-        blr = self.w2_BL(blr)
+        blr = self.w2_BL(blr) 
        
         # create a mask to filter out 8th blr to avoid ambiguity (tall person at far may have same 2D with short person at close point).
         tmp_mask = torch.from_numpy(np.array([[1, 1, 1, 1, 0, 1, 1, 1, 1]]).astype('float32')).to(blr.device)
@@ -350,8 +377,10 @@ class BLGenerator(nn.Module):
         # operate BL modification on original data
         blr = nn.Tanh()(blr) * self.blr_tanhlimit  # allow +-20% length change.
         blr=blr.unsqueeze(1).repeat(1,pad,1)
+        #print("blr: ",blr.shape)
         bones_length = get_bone_lengthbypose3d(augx)
         augx_bl = blaugment9to15(augx, bones_length, blr.unsqueeze(3))
+        #print("augx_bl: ",augx_bl.shape)
         return augx_bl, blr  # return blr for debug
 
 

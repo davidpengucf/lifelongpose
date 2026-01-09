@@ -6,7 +6,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from common.viz import *
 from common.data_loader import PoseDataSet, PoseBuffer, PoseTarget, PoseTarget_temp
-from utils.data_utils import create_2d_data_3dhp_test, fetch, fetch_3dhp, fetch_3dhp_train, procrustes_torch,read_3d_data, create_2d_data, fetch_target, create_2d_data_target,align_poses
+from utils.data_utils import create_2d_data_3dhp_test, fetch, fetch_3dhp, fetch_3dhp_ts1, fetch_3dhp_ts2, fetch_3dhp_ts3, fetch_3dhp_ts4, fetch_3dhp_ts5, fetch_3dhp_ts6, fetch_3dhp_train, procrustes_torch,read_3d_data, create_2d_data, fetch_target, create_2d_data_target,align_poses
 
 
 
@@ -68,23 +68,35 @@ def data_preparation(args,remove_static_joints=True):
     # data loader for GAN training
     ############################################
 
-    if args.dataset_target == '3dhp':
-        keypoints_target = create_2d_data_target(path.join('data', 'data_'+args.dataset_target + '_' + args.keypoints_target + '_train.npz'), dataset)
+    if args.dataset_target == '3dhp' or args.dataset_target == '3dhp_ts1' or args.dataset_target == '3dhp_ts2' \
+        or args.dataset_target == '3dhp_ts3' or args.dataset_target == '3dhp_ts4' \
+        or args.dataset_target == '3dhp_ts5' or args.dataset_target == '3dhp_ts6':
+        keypoints_target = create_2d_data_target(path.join('data', 'data_'+ '3dhp' + '_' + args.keypoints_target + '_train.npz'), dataset)
         subjects_target=['S1','S2','S3','S4','S5','S6','S7']
         poses_target_2d = fetch_target(subjects_target,keypoints_target)
         poses_target_2d=np.concatenate(poses_target_2d)
         if args.keypoints_target=='pt':
             poses_target_2d = np.repeat(poses_target_2d,4,axis=0)
-        poses_target_3d = fetch_3dhp_train(path.join('data', 'data_'+args.dataset_target + '_gt_train_3d.npz'))
+        poses_target_3d = fetch_3dhp_train(path.join('data', 'data_'+ '3dhp' + '_gt_train_3d.npz'))
 
 
     if args.dataset_target == 'h36m':
         poses_target_2d=poses_train_2d
-    if args.dataset_target == '3dpw':
-        keypoints_target = np.load(path.join('data', 'data_'+args.dataset_target + '_' + args.keypoints_target + '_train.npz'), allow_pickle=True)
+        poses_target_3d=poses_valid
+    if args.dataset_target == '3dpw' or args.dataset_target == '3dpw_ts1' or args.dataset_target == '3dpw_ts2' \
+        or args.dataset_target == '3dpw_ts3' or args.dataset_target == '3dpw_ts4':
+        keypoints_target = np.load(path.join('data', 'data_'+ '3dpw' + '_' + args.keypoints_target + '_train.npz'), allow_pickle=True)
         poses_target_2d = keypoints_target['positions_2d']
         poses_target_2d = np.repeat(poses_target_2d,50,axis=0)
-        poses_target_3d = np.load(path.join('data', 'data_'+args.dataset_target + '_' + args.keypoints_target + '_train.npz'), allow_pickle=True)
+        poses_target_3d = np.load(path.join('data', 'data_'+ '3dpw' + '_' + args.keypoints_target + '_train.npz'), allow_pickle=True)
+        poses_target_3d = keypoints_target['positions_3d']   
+        poses_target_3d = np.repeat(poses_target_3d,50,axis=0)
+        print('3dpw_shape',poses_target_3d.shape)
+    if args.dataset_target == '3dpw_new':
+        keypoints_target = np.load(path.join('data', 'data_'+ "3dpw" + '_' + args.keypoints_target + '_train.npz'), allow_pickle=True)
+        poses_target_2d = keypoints_target['positions_2d']
+        poses_target_2d = np.repeat(poses_target_2d,50,axis=0)
+        poses_target_3d = np.load(path.join('data', 'data_'+ "3dpw" + '_' + args.keypoints_target + '_train.npz'), allow_pickle=True)
         poses_target_3d = keypoints_target['positions_3d']   
         poses_target_3d = np.repeat(poses_target_3d,50,axis=0)
         print('3dpw_shape',poses_target_3d.shape)
@@ -97,6 +109,9 @@ def data_preparation(args,remove_static_joints=True):
         # poses_target_2d=np.concatenate((poses_train_2d,poses_target_2d),axis=0)
         # np.random.shuffle(poses_target_2d)
         poses_target_2d=poses_train_2d
+        poses_target_3d = np.load(path.join('data', 'data_'+args.dataset_target + '_' + args.keypoints_target + '_train.npz'), allow_pickle=True)
+        poses_target_3d = keypoints_target['positions_3d']   
+        poses_target_3d = np.repeat(poses_target_3d,50,axis=0)
     print('target_shape',poses_target_2d.shape)
 
     target_2d_loader = DataLoader(PoseTarget(poses_target_2d),
@@ -107,7 +122,9 @@ def data_preparation(args,remove_static_joints=True):
                                   batch_size=args.batch_size,
                                   shuffle=True, num_workers=args.num_workers, pin_memory=True)
     
-    ## just for visualization of camera distribution 
+    ## just for visualization of camera distribution#
+    #target_3d_loader2 = None 
+    #if args.dataset_target != 'h36m':
     target_3d_loader2 = DataLoader(PoseTarget(poses_target_3d),
                                   batch_size=args.batch_size,
                                   shuffle=True, num_workers=args.num_workers, pin_memory=True)
@@ -125,10 +142,119 @@ def data_preparation(args,remove_static_joints=True):
         test_loader = DataLoader(PoseBuffer(mpi3dhp_3d, mpi3dhp_2d,pad=args.pad),
                                 batch_size=args.batch_size,
                                 shuffle=False, num_workers=args.num_workers, pin_memory=True)
+        
+    elif args.dataset_target == '3dhp_ts1':
+        keypoints_test=create_2d_data_3dhp_test(path.join('data', 'data_3dhp_' + args.keypoints_target + '_test_ts1.npz'))
+        mpi3dhp_3d,mpi3dhp_2d=fetch_3dhp_ts1(path.join('data', 'data_3dhp_' + args.keypoints_target + '_test_ts1.npz'),keypoints_test)
+        mpi3dhp_3d,mpi3dhp_2d=np.concatenate(mpi3dhp_3d),np.concatenate(mpi3dhp_2d)
+        print('test_shape',mpi3dhp_3d.shape)
+        test_loader = DataLoader(PoseBuffer(mpi3dhp_3d, mpi3dhp_2d,pad=args.pad),
+                                batch_size=args.batch_size,
+                                shuffle=False, num_workers=args.num_workers, pin_memory=True)
+        
+    elif args.dataset_target == '3dhp_ts2':
+        keypoints_test=create_2d_data_3dhp_test(path.join('data', 'data_3dhp_' + args.keypoints_target + '_test_ts2.npz'))
+        mpi3dhp_3d,mpi3dhp_2d=fetch_3dhp_ts2(path.join('data', 'data_3dhp_' + args.keypoints_target + '_test_ts2.npz'),keypoints_test)
+        mpi3dhp_3d,mpi3dhp_2d=np.concatenate(mpi3dhp_3d),np.concatenate(mpi3dhp_2d)
+        print('test_shape',mpi3dhp_3d.shape)
+        test_loader = DataLoader(PoseBuffer(mpi3dhp_3d, mpi3dhp_2d,pad=args.pad),
+                                batch_size=args.batch_size,
+                                shuffle=False, num_workers=args.num_workers, pin_memory=True)
+        
+    elif args.dataset_target == '3dhp_ts3':
+        keypoints_test=create_2d_data_3dhp_test(path.join('data', 'data_3dhp_' + args.keypoints_target + '_test_ts3.npz'))
+        mpi3dhp_3d,mpi3dhp_2d=fetch_3dhp_ts3(path.join('data', 'data_3dhp_' + args.keypoints_target + '_test_ts3.npz'),keypoints_test)
+        mpi3dhp_3d,mpi3dhp_2d=np.concatenate(mpi3dhp_3d),np.concatenate(mpi3dhp_2d)
+        print('test_shape',mpi3dhp_3d.shape)
+        test_loader = DataLoader(PoseBuffer(mpi3dhp_3d, mpi3dhp_2d,pad=args.pad),
+                                batch_size=args.batch_size,
+                                shuffle=False, num_workers=args.num_workers, pin_memory=True)
+        
+    elif args.dataset_target == '3dhp_ts4':
+        keypoints_test=create_2d_data_3dhp_test(path.join('data', 'data_3dhp_' + args.keypoints_target + '_test_ts4.npz'))
+        mpi3dhp_3d,mpi3dhp_2d=fetch_3dhp_ts4(path.join('data', 'data_3dhp_' + args.keypoints_target + '_test_ts4.npz'),keypoints_test)
+        mpi3dhp_3d,mpi3dhp_2d=np.concatenate(mpi3dhp_3d),np.concatenate(mpi3dhp_2d)
+        print('test_shape',mpi3dhp_3d.shape)
+        test_loader = DataLoader(PoseBuffer(mpi3dhp_3d, mpi3dhp_2d,pad=args.pad),
+                                batch_size=args.batch_size,
+                                shuffle=False, num_workers=args.num_workers, pin_memory=True)
+        
+    elif args.dataset_target == '3dhp_ts5':
+        keypoints_test=create_2d_data_3dhp_test(path.join('data', 'data_3dhp_' + args.keypoints_target + '_test_ts5.npz'))
+        mpi3dhp_3d,mpi3dhp_2d=fetch_3dhp_ts5(path.join('data', 'data_3dhp_' + args.keypoints_target + '_test_ts5.npz'),keypoints_test)
+        mpi3dhp_3d,mpi3dhp_2d=np.concatenate(mpi3dhp_3d),np.concatenate(mpi3dhp_2d)
+        print('test_shape',mpi3dhp_3d.shape)
+        test_loader = DataLoader(PoseBuffer(mpi3dhp_3d, mpi3dhp_2d,pad=args.pad),
+                                batch_size=args.batch_size,
+                                shuffle=False, num_workers=args.num_workers, pin_memory=True)
+        
+    elif args.dataset_target == '3dhp_ts6':
+        keypoints_test=create_2d_data_3dhp_test(path.join('data', 'data_3dhp_' + args.keypoints_target + '_test_ts6.npz'))
+        mpi3dhp_3d,mpi3dhp_2d=fetch_3dhp_ts6(path.join('data', 'data_3dhp_' + args.keypoints_target + '_test_ts6.npz'),keypoints_test)
+        mpi3dhp_3d,mpi3dhp_2d=np.concatenate(mpi3dhp_3d),np.concatenate(mpi3dhp_2d)
+        print('test_shape',mpi3dhp_3d.shape)
+        test_loader = DataLoader(PoseBuffer(mpi3dhp_3d, mpi3dhp_2d,pad=args.pad),
+                                batch_size=args.batch_size,
+                                shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
     elif args.dataset_target == '3dpw':
         keypoints_test=np.load(path.join('data', 'data_'+args.dataset_target + '_' + args.keypoints_target + '_test.npz'))
         _3dpw_3d, _3dpw_2d = keypoints_test['positions_3d'],keypoints_test['positions_2d']
+        _3dpw_3d=_3dpw_3d-_3dpw_3d[:,:1]
+        joints=[0,4,5,6,1,2,3,7,8,9,10,11,12,13,14,15]
+        _3dpw_3d, _3dpw_2d= _3dpw_3d[:,joints], _3dpw_2d[:,joints]
+        print('test_shape',_3dpw_2d.shape)
+        test_loader = DataLoader(PoseBuffer(_3dpw_3d, _3dpw_2d,pad=args.pad),
+                                batch_size=args.batch_size,
+                                shuffle=False, num_workers=args.num_workers, pin_memory=True)
+        
+    elif args.dataset_target == '3dpw_ts1':
+        keypoints_test=np.load(path.join('data', 'data_3dpw_' + args.keypoints_target + '_test_ts1.npz'))
+        _3dpw_3d, _3dpw_2d = keypoints_test['positions_3d'],keypoints_test['positions_2d']
+        _3dpw_3d=_3dpw_3d-_3dpw_3d[:,:1]
+        joints=[0,4,5,6,1,2,3,7,8,9,10,11,12,13,14,15]
+        _3dpw_3d, _3dpw_2d= _3dpw_3d[:,joints], _3dpw_2d[:,joints]
+        print('test_shape',_3dpw_2d.shape)
+        test_loader = DataLoader(PoseBuffer(_3dpw_3d, _3dpw_2d,pad=args.pad),
+                                batch_size=args.batch_size,
+                                shuffle=False, num_workers=args.num_workers, pin_memory=True)
+        
+    elif args.dataset_target == '3dpw_ts2':
+        keypoints_test=np.load(path.join('data', 'data_3dpw_' + args.keypoints_target + '_test_ts2.npz'))
+        _3dpw_3d, _3dpw_2d = keypoints_test['positions_3d'],keypoints_test['positions_2d']
+        _3dpw_3d=_3dpw_3d-_3dpw_3d[:,:1]
+        joints=[0,4,5,6,1,2,3,7,8,9,10,11,12,13,14,15]
+        _3dpw_3d, _3dpw_2d= _3dpw_3d[:,joints], _3dpw_2d[:,joints]
+        print('test_shape',_3dpw_2d.shape)
+        test_loader = DataLoader(PoseBuffer(_3dpw_3d, _3dpw_2d,pad=args.pad),
+                                batch_size=args.batch_size,
+                                shuffle=False, num_workers=args.num_workers, pin_memory=True)
+        
+    elif args.dataset_target == '3dpw_ts3':
+        keypoints_test=np.load(path.join('data', 'data_3dpw_' + args.keypoints_target + '_test_ts3.npz'))
+        _3dpw_3d, _3dpw_2d = keypoints_test['positions_3d'],keypoints_test['positions_2d']
+        _3dpw_3d=_3dpw_3d-_3dpw_3d[:,:1]
+        joints=[0,4,5,6,1,2,3,7,8,9,10,11,12,13,14,15]
+        _3dpw_3d, _3dpw_2d= _3dpw_3d[:,joints], _3dpw_2d[:,joints]
+        print('test_shape',_3dpw_2d.shape)
+        test_loader = DataLoader(PoseBuffer(_3dpw_3d, _3dpw_2d,pad=args.pad),
+                                batch_size=args.batch_size,
+                                shuffle=False, num_workers=args.num_workers, pin_memory=True)
+        
+    elif args.dataset_target == '3dpw_ts4':
+        keypoints_test=np.load(path.join('data', 'data_3dpw_' + args.keypoints_target + '_test_ts4.npz'))
+        _3dpw_3d, _3dpw_2d = keypoints_test['positions_3d'],keypoints_test['positions_2d']
+        _3dpw_3d=_3dpw_3d-_3dpw_3d[:,:1]
+        joints=[0,4,5,6,1,2,3,7,8,9,10,11,12,13,14,15]
+        _3dpw_3d, _3dpw_2d= _3dpw_3d[:,joints], _3dpw_2d[:,joints]
+        print('test_shape',_3dpw_2d.shape)
+        test_loader = DataLoader(PoseBuffer(_3dpw_3d, _3dpw_2d,pad=args.pad),
+                                batch_size=args.batch_size,
+                                shuffle=False, num_workers=args.num_workers, pin_memory=True)
+    
+    elif args.dataset_target == '3dpw_new':
+        keypoints_test=np.load(path.join('data', 'test_'+args.dataset_target + '.npz'))
+        _3dpw_3d, _3dpw_2d = keypoints_test['pose3d'],keypoints_test['pose2d']
         _3dpw_3d=_3dpw_3d-_3dpw_3d[:,:1]
         joints=[0,4,5,6,1,2,3,7,8,9,10,11,12,13,14,15]
         _3dpw_3d, _3dpw_2d= _3dpw_3d[:,joints], _3dpw_2d[:,joints]

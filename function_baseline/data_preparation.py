@@ -80,6 +80,17 @@ def data_preparation(args):
         test_loader = DataLoader(PoseBuffer(_3dpw_3d, _3dpw_2d,pad=args.pad),
                                 batch_size=args.batch_size,
                                 shuffle=False, num_workers=args.num_workers, pin_memory=True)
+        
+    elif args.dataset_target == '3dpw_new':
+        keypoints_test=np.load(path.join('data', 'test_'+args.dataset_target + '.npz'))
+        _3dpw_3d, _3dpw_2d = keypoints_test['pose3d'],keypoints_test['pose2d']
+        _3dpw_3d=_3dpw_3d-_3dpw_3d[:,:1]
+        joints=[0,4,5,6,1,2,3,7,8,9,10,11,12,13,14,15]
+        _3dpw_3d, _3dpw_2d= _3dpw_3d[:,joints], _3dpw_2d[:,joints]
+        print('test_shape',_3dpw_2d.shape)
+        test_loader = DataLoader(PoseBuffer(_3dpw_3d, _3dpw_2d,pad=args.pad),
+                                batch_size=args.batch_size,
+                                shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
 
     elif args.dataset_target == 'skii':
@@ -90,7 +101,7 @@ def data_preparation(args):
         skii_3d=skii_3d-skii_3d[:,:1]
         # joints=[0,4,5,6,1,2,3,7,8,9,10,11,12,13,14,15]
         # skii_3d, _3dpw_2d= _3dpw_3d[:,joints], _3dpw_2d[:,joints]
-        print('test_shape',skii_2d.shape)
+        #print('test_shape',skii_2d.shape)
         test_loader = DataLoader(PoseBuffer(skii_3d, skii_2d,pad=args.pad),
                                 batch_size=args.batch_size,
                                 shuffle=False, num_workers=args.num_workers, pin_memory=True)

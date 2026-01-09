@@ -77,6 +77,144 @@ def fetch_3dhp(data_path,keypoints):
         
     return data_3d,data_2d
 
+def fetch_3dhp_ts1(data_path,keypoints):
+    data3d = np.load(data_path, allow_pickle=True)
+    data3d = data3d['positions_3d'].item()
+    data2d=keypoints
+
+    data_3d=[]
+    data_2d=[] 
+    subjects=['TS1']  
+    for subject in subjects:
+        data3d[subject]-=data3d[subject][:,:1]
+        # row=np.sum(np.abs(data2d[subject])>1,axis=(-1,-2))==0
+        # data_3d.append(data3d[subject][row]/1000)
+        # data_2d.append(data2d[subject][row])   
+        if subject in ['TS3','TS4']:
+            data_3d.append(data3d[subject][100:]/1000)
+            data_2d.append(data2d[subject][100:])
+        else:
+            data_3d.append(data3d[subject]/1000)
+            data_2d.append(data2d[subject])       
+        #      
+        
+    return data_3d,data_2d
+
+def fetch_3dhp_ts2(data_path,keypoints):
+    data3d = np.load(data_path, allow_pickle=True)
+    data3d = data3d['positions_3d'].item()
+    data2d=keypoints
+
+    data_3d=[]
+    data_2d=[] 
+    subjects=['TS2']  
+    for subject in subjects:
+        data3d[subject]-=data3d[subject][:,:1]
+        # row=np.sum(np.abs(data2d[subject])>1,axis=(-1,-2))==0
+        # data_3d.append(data3d[subject][row]/1000)
+        # data_2d.append(data2d[subject][row])   
+        if subject in ['TS3','TS4']:
+            data_3d.append(data3d[subject][100:]/1000)
+            data_2d.append(data2d[subject][100:])
+        else:
+            data_3d.append(data3d[subject]/1000)
+            data_2d.append(data2d[subject])       
+        #      
+        
+    return data_3d,data_2d
+
+def fetch_3dhp_ts3(data_path,keypoints):
+    data3d = np.load(data_path, allow_pickle=True)
+    data3d = data3d['positions_3d'].item()
+    data2d=keypoints
+
+    data_3d=[]
+    data_2d=[] 
+    subjects=['TS3']  
+    for subject in subjects:
+        data3d[subject]-=data3d[subject][:,:1]
+        # row=np.sum(np.abs(data2d[subject])>1,axis=(-1,-2))==0
+        # data_3d.append(data3d[subject][row]/1000)
+        # data_2d.append(data2d[subject][row])   
+        if subject in ['TS3','TS4']:
+            data_3d.append(data3d[subject][100:]/1000)
+            data_2d.append(data2d[subject][100:])
+        else:
+            data_3d.append(data3d[subject]/1000)
+            data_2d.append(data2d[subject])       
+        #      
+        
+    return data_3d,data_2d
+
+def fetch_3dhp_ts4(data_path,keypoints):
+    data3d = np.load(data_path, allow_pickle=True)
+    data3d = data3d['positions_3d'].item()
+    data2d=keypoints
+
+    data_3d=[]
+    data_2d=[] 
+    subjects=['TS4']  
+    for subject in subjects:
+        data3d[subject]-=data3d[subject][:,:1]
+        # row=np.sum(np.abs(data2d[subject])>1,axis=(-1,-2))==0
+        # data_3d.append(data3d[subject][row]/1000)
+        # data_2d.append(data2d[subject][row])   
+        if subject in ['TS3','TS4']:
+            data_3d.append(data3d[subject][100:]/1000)
+            data_2d.append(data2d[subject][100:])
+        else:
+            data_3d.append(data3d[subject]/1000)
+            data_2d.append(data2d[subject])       
+        #      
+        
+    return data_3d,data_2d
+
+def fetch_3dhp_ts5(data_path,keypoints):
+    data3d = np.load(data_path, allow_pickle=True)
+    data3d = data3d['positions_3d'].item()
+    data2d=keypoints
+
+    data_3d=[]
+    data_2d=[] 
+    subjects=['TS5']  
+    for subject in subjects:
+        data3d[subject]-=data3d[subject][:,:1]
+        # row=np.sum(np.abs(data2d[subject])>1,axis=(-1,-2))==0
+        # data_3d.append(data3d[subject][row]/1000)
+        # data_2d.append(data2d[subject][row])   
+        if subject in ['TS3','TS4']:
+            data_3d.append(data3d[subject][100:]/1000)
+            data_2d.append(data2d[subject][100:])
+        else:
+            data_3d.append(data3d[subject]/1000)
+            data_2d.append(data2d[subject])       
+        #      
+        
+    return data_3d,data_2d
+
+def fetch_3dhp_ts6(data_path,keypoints):
+    data3d = np.load(data_path, allow_pickle=True)
+    data3d = data3d['positions_3d'].item()
+    data2d=keypoints
+
+    data_3d=[]
+    data_2d=[] 
+    subjects=['TS6']  
+    for subject in subjects:
+        data3d[subject]-=data3d[subject][:,:1]
+        # row=np.sum(np.abs(data2d[subject])>1,axis=(-1,-2))==0
+        # data_3d.append(data3d[subject][row]/1000)
+        # data_2d.append(data2d[subject][row])   
+        if subject in ['TS3','TS4']:
+            data_3d.append(data3d[subject][100:]/1000)
+            data_2d.append(data2d[subject][100:])
+        else:
+            data_3d.append(data3d[subject]/1000)
+            data_2d.append(data2d[subject])       
+        #      
+        
+    return data_3d,data_2d
+
 def fetch_3dhp_train(data_path):
     data3d = np.load(data_path, allow_pickle=True)
     data3d = data3d['positions_3d'].item()
