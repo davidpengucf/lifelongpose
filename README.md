@@ -1,6 +1,6 @@
 # [AAAI 2026] Lifelong Domain Adaptive 3D Human Pose Estimation
 
-This implementation is based on [VideoPose3D](https://github.com/facebookresearch/VideoPose3D) and [PoseAug](https://github.com/jfzhang95/PoseAug). Experiments on 4 datasets: Human3.6M, 3DHP, 3DPW, and Ski are provided. AdaptPose is aimed to improve accuracy of 3D pose estimators in cross-dataset scenarios and now supports **Lifelong (Continual) Learning** settings.
+This implementation is based on [VideoPose3D](https://github.com/facebookresearch/VideoPose3D), [PoseAug](https://github.com/jfzhang95/PoseAug) and [AdaptPose](https://github.com/mgholamikn/AdaptPose). Experiments on these datasets: Human3.6M, 3DHP, 3DPW are provided. It supports **Lifelong (Continual) Learning** settings.
 
 ## Environment
 
